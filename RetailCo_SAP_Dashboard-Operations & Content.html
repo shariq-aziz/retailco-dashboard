@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RetailCo Digital Transformation Dashboard — SAP Experience Centers</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue-dark: #0C447C;
+    --blue-mid: #185FA5;
+    --blue: #378ADD;
+    --blue-light: #B5D4F4;
+    --blue-bg: #E6F1FB;
+    --green-dark: #27500A;
+    --green-mid: #3B6D11;
+    --green: #97C459;
+    --green-light: #C0DD97;
+    --green-bg: #EAF3DE;
+    --amber: #EF9F27;
+    --amber-bg: #FAEEDA;
+    --amber-border: #FAC775;
+    --amber-dark: #412402;
+    --amber-text: #854F0B;
+    --red: #E24B4A;
+    --red-bg: #FCEBEB;
+    --red-dark: #A32D2D;
+    --purple: #7F77DD;
+    --teal: #1D9E75;
+    --gray-100: #F1EFE8;
+    --gray-200: #D3D1C7;
+    --gray-400: #888780;
+    --gray-600: #5F5E5A;
+    --gray-900: #2C2C2A;
+    --text: #1a1a1a;
+    --text-muted: #5F5E5A;
+    --text-faint: #888780;
+    --bg: #f8f7f5;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.1);
+    --border-strong: rgba(0,0,0,0.18);
+    --radius: 8px;
+    --radius-lg: 12px;
+    --grid: rgba(0,0,0,0.07);
+    --tick: #888780;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .header-left h1 { font-size: 15px; font-weight: 600; color: var(--blue-dark); }
+  .header-left p { font-size: 12px; color: var(--text-muted); }
+  .header-badge {
+    font-size: 11px; font-weight: 500;
+    background: var(--blue-bg); color: var(--blue-dark);
+    padding: 5px 12px; border-radius: 20px;
+    border: 1px solid var(--blue-light);
+    white-space: nowrap;
+  }
+
+  /* ── TABS ── */
+  .tabs-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+  }
+  .tabs-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    gap: 0;
+  }
+  .tab {
+    font-size: 13px; font-weight: 500;
+    padding: 14px 20px;
+    border: none; background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  .tab:hover:not(.active) { color: var(--text); }
+  .tab.active { color: var(--blue-mid); border-bottom-color: var(--blue-mid); }
+
+  /* ── MAIN CONTENT ── */
+  .main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── KPI GRID ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 1.5rem;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.1rem 1.25rem;
+  }
+  .kpi .k-label { font-size: 11px; font-weight: 500; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+  .kpi .k-value { font-size: 26px; font-weight: 600; color: var(--text); line-height: 1; margin-bottom: 6px; }
+  .kpi .k-delta { font-size: 12px; }
+  .k-delta.up { color: var(--green-mid); }
+  .k-delta.down { color: var(--red-dark); }
+  .k-delta.warn { color: var(--amber-text); }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+  }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .card-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 1rem; }
+
+  /* ── GRID LAYOUTS ── */
+  .row-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
+
+  /* ── CHARTS ── */
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* ── LEGEND ── */
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; }
+  .legend span { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); }
+  .dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+  /* ── INSIGHT BOXES ── */
+  .insight { border-left: 3px solid var(--blue-mid); background: var(--blue-bg); border-radius: 0 var(--radius) var(--radius) 0; padding: 10px 14px; margin-bottom: 10px; }
+  .insight .i-title { font-size: 12px; font-weight: 600; color: var(--blue-dark); margin-bottom: 3px; }
+  .insight .i-body { font-size: 12px; color: var(--blue-mid); }
+
+  /* ── SEGMENT BARS ── */
+  .seg-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 12px; }
+  .seg-label { width: 90px; color: var(--text-muted); flex-shrink: 0; }
+  .seg-track { flex: 1; height: 8px; background: var(--gray-100); border-radius: 4px; overflow: hidden; }
+  .seg-fill { height: 100%; border-radius: 4px; }
+  .seg-val { width: 36px; text-align: right; font-weight: 600; color: var(--text); }
+
+  /* ── SAP SOLUTION BOX ── */
+  .sap-hero {
+    background: var(--green-bg);
+    border: 1px solid var(--green-light);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .sap-hero-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+  .sap-pill { font-size: 11px; font-weight: 600; background: var(--green-mid); color: #fff; padding: 4px 10px; border-radius: 20px; }
+  .sap-hero-title { font-size: 14px; font-weight: 600; color: var(--green-dark); }
+  .sap-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .sap-col { background: var(--surface); border: 1px solid var(--green-light); border-radius: var(--radius); padding: 12px 14px; }
+  .sap-col .sc-label { font-size: 11px; font-weight: 600; color: var(--green-mid); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .sap-col .sc-text { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+  /* ── ROADMAP ── */
+  .roadmap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .road-phase { border-radius: var(--radius-lg); padding: 14px 16px; }
+  .phase-1 { background: var(--blue-bg); border: 1px solid var(--blue-light); }
+  .phase-2 { background: var(--green-bg); border: 1px solid var(--green-light); }
+  .phase-3 { background: var(--amber-bg); border: 1px solid var(--amber-border); }
+  .road-phase .r-tag { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .road-phase .r-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+  .road-phase .r-text { font-size: 12px; line-height: 1.5; }
+  .phase-1 .r-tag, .phase-1 .r-title { color: var(--blue-dark); }
+  .phase-1 .r-text { color: var(--blue-mid); }
+  .phase-2 .r-tag, .phase-2 .r-title { color: var(--green-dark); }
+  .phase-2 .r-text { color: var(--green-mid); }
+  .phase-3 .r-tag, .phase-3 .r-title { color: var(--amber-dark); }
+  .phase-3 .r-text { color: var(--amber-text); }
+
+  /* ── FOOTER ── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-faint);
+    margin-top: 2rem;
+  }
+  .footer strong { color: var(--text-muted); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .row-2-1, .row-2, .row-3 { grid-template-columns: 1fr; }
+    .sap-cols, .roadmap { grid-template-columns: 1fr; }
+    .main { padding: 1rem; }
+  }
+  @media (max-width: 500px) {
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .tab { padding: 12px 12px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-left">
+      <h1>RetailCo Digital Transformation Dashboard</h1>
+      <p>FY 2024 · SAP Analytics Showcase · Experience Centers Demo Project</p>
+    </div>
+    <span class="header-badge">Project by Shariq Aziz · FAU M.Sc. IIS · SAP Req. 447355</span>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-bar">
+  <div class="tabs-inner">
+    <button class="tab active" onclick="showTab('overview', this)">Overview</button>
+    <button class="tab" onclick="showTab('inventory', this)">Inventory</button>
+    <button class="tab" onclick="showTab('customers', this)">Customers</button>
+    <button class="tab" onclick="showTab('sap', this)">SAP Solution</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ══ OVERVIEW ══ -->
+  <div class="panel active" id="panel-overview">
+
+    <div class="kpi-grid">
+      <div class="kpi"><div class="k-label">Total Revenue</div><div class="k-value">€4.2M</div><div class="k-delta up">▲ 12% vs prior year</div></div>
+      <div class="kpi"><div class="k-label">Gross Margin</div><div class="k-value">38.4%</div><div class="k-delta down">▼ 3.1pp — margin pressure</div></div>
+      <div class="kpi"><div class="k-label">Dead Stock</div><div class="k-value">15%</div><div class="k-delta warn">▲ €210K tied up in stock</div></div>
+      <div class="kpi"><div class="k-label">Customer NPS</div><div class="k-value">42</div><div class="k-delta down">▼ 8 pts — experience gap</div></div>
+    </div>
+
+    <div class="row-2-1">
+      <div class="card">
+        <div class="card-title">Monthly Revenue Trend</div>
+        <div class="card-sub">Strong Q4 peak — mid-year dip signals inventory misalignment with demand</div>
+        <div class="legend">
+          <span><span class="dot" style="background:#378ADD"></span>2024 Revenue</span>
+          <span><span class="dot" style="background:#97C459"></span>2023 Revenue</span>
+        </div>
+        <div class="chart-wrap" style="height:220px"><canvas id="c-revenue"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Revenue by Category</div>
+        <div class="card-sub">Electronics + Apparel = 68% of total revenue</div>
+        <div class="legend" style="margin-top:8px">
+          <span><span class="dot" style="background:#378ADD"></span>Electronics 32%</span>
+          <span><span class="dot" style="background:#97C459"></span>Apparel 36%</span>
+          <span><span class="dot" style="background:#EF9F27"></span>Home 14%</span>
+          <span><span class="dot" style="background:#1D9E75"></span>Food 9%</span>
+          <span><span class="dot" style="background:#7F77DD"></span>Sports 6%</span>
+          <span><span class="dot" style="background:#B4B2A9"></span>Other 3%</span>
+        </div>
+        <div class="chart-wrap" style="height:200px"><canvas id="c-category"></canvas></div>
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="card">
+        <div class="card-title">Regional Performance</div>
+        <div class="card-sub">South region underperforms despite high foot traffic</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="c-regional"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Key Business Insights</div>
+        <div class="card-sub">Data-driven findings for executive briefing</div>
+        <div style="margin-top:8px">
+          <div class="insight"><div class="i-title">Pareto Effect</div><div class="i-body">30% of SKUs generate 80% of revenue — over-assortment is diluting operational focus</div></div>
+          <div class="insight"><div class="i-title">Seasonal Demand Gap</div><div class="i-body">Q4 drives 41% of annual sales — inventory was under-stocked by 18% last peak season</div></div>
+          <div class="insight"><div class="i-title">Dead Stock Cost</div><div class="i-body">15% of inventory (€210K) hasn't moved in 90+ days — cash unnecessarily tied up</div></div>
+          <div class="insight"><div class="i-title">Margin Erosion</div><div class="i-body">Discounting on slow movers pulled gross margin down 3.1 percentage points year-on-year</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ INVENTORY ══ -->
+  <div class="panel" id="panel-inventory">
+
+    <div class="kpi-grid">
+      <div class="kpi"><div class="k-label">Inventory Turnover</div><div class="k-value">4.2x</div><div class="k-delta warn">Industry avg: 6.1x</div></div>
+      <div class="kpi"><div class="k-label">Dead Stock Value</div><div class="k-value">€210K</div><div class="k-delta down">▲ 15% of total inventory</div></div>
+      <div class="kpi"><div class="k-label">Stockout Events</div><div class="k-value">47</div><div class="k-delta down">≈ €83K in lost sales</div></div>
+      <div class="kpi"><div class="k-label">Overstock SKUs</div><div class="k-value">312</div><div class="k-delta warn">Discounting risk active</div></div>
+    </div>
+
+    <div class="row-2">
+      <div class="card">
+        <div class="card-title">Inventory Turnover by Category</div>
+        <div class="card-sub">Electronics healthy; Home & Garden critically below benchmark</div>
+        <div class="legend">
+          <span><span class="dot" style="background:#378ADD"></span>Actual turnover</span>
+          <span><span class="dot" style="background:rgba(151,196,89,0.6)"></span>Industry avg (6.1x)</span>
+        </div>
+        <div class="chart-wrap" style="height:230px"><canvas id="c-turnover"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Stock Health Breakdown</div>
+        <div class="card-sub">Only 62% of stock is actively turning at a healthy rate</div>
+        <div class="legend" style="margin-top:8px">
+          <span><span class="dot" style="background:#97C459"></span>Active 62%</span>
+          <span><span class="dot" style="background:#EF9F27"></span>Slow-moving 16%</span>
+          <span><span class="dot" style="background:#E24B4A"></span>Dead stock 15%</span>
+          <span><span class="dot" style="background:#7F77DD"></span>Critical overstock 7%</span>
+        </div>
+        <div class="chart-wrap" style="height:220px"><canvas id="c-stock"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-title">Demand vs Supply Gap — Monthly</div>
+      <div class="card-sub">Positive gap (line above zero) = stockout risk; negative gap = overstock carrying cost</div>
+      <div class="legend">
+        <span><span class="dot" style="background:rgba(55,138,221,0.4)"></span>Demand (€K)</span>
+        <span><span class="dot" style="background:rgba(151,196,89,0.5)"></span>Supply (€K)</span>
+        <span><span class="dot" style="background:#E24B4A"></span>Gap (right axis, €K)</span>
+      </div>
+      <div class="chart-wrap" style="height:200px"><canvas id="c-gap"></canvas></div>
+    </div>
+
+  </div>
+
+  <!-- ══ CUSTOMERS ══ -->
+  <div class="panel" id="panel-customers">
+
+    <div class="kpi-grid">
+      <div class="kpi"><div class="k-label">Total Customers</div><div class="k-value">18,420</div><div class="k-delta up">▲ 9% YoY growth</div></div>
+      <div class="kpi"><div class="k-label">Repeat Purchase Rate</div><div class="k-value">34%</div><div class="k-delta down">▼ Industry avg is 52%</div></div>
+      <div class="kpi"><div class="k-label">Avg Order Value</div><div class="k-value">€228</div><div class="k-delta up">▲ 7% vs prior year</div></div>
+      <div class="kpi"><div class="k-label">12-Month Churn</div><div class="k-value">28%</div><div class="k-delta down">▼ High — retention gap</div></div>
+    </div>
+
+    <div class="row-2">
+      <div class="card">
+        <div class="card-title">Customer Segmentation — RFM Model</div>
+        <div class="card-sub">Recency · Frequency · Monetary value analysis</div>
+        <div class="legend" style="margin-top:8px">
+          <span><span class="dot" style="background:#378ADD"></span>Champions 22%</span>
+          <span><span class="dot" style="background:#97C459"></span>Loyal 18%</span>
+          <span><span class="dot" style="background:#EF9F27"></span>At Risk 15%</span>
+          <span><span class="dot" style="background:#7F77DD"></span>Occasional 31%</span>
+          <span><span class="dot" style="background:#E24B4A"></span>Lost 14%</span>
+        </div>
+        <div class="chart-wrap" style="height:230px"><canvas id="c-rfm"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Segment Revenue Contribution</div>
+        <div class="card-sub">Champions (22% of customers) drive 68% of revenue</div>
+        <div style="margin-top:16px">
+          <div class="seg-row"><div class="seg-label">Champions</div><div class="seg-track"><div class="seg-fill" style="width:68%;background:#378ADD"></div></div><div class="seg-val">68%</div></div>
+          <div class="seg-row"><div class="seg-label">Loyal</div><div class="seg-track"><div class="seg-fill" style="width:18%;background:#97C459"></div></div><div class="seg-val">18%</div></div>
+          <div class="seg-row"><div class="seg-label">At Risk</div><div class="seg-track"><div class="seg-fill" style="width:8%;background:#EF9F27"></div></div><div class="seg-val">8%</div></div>
+          <div class="seg-row"><div class="seg-label">Occasional</div><div class="seg-track"><div class="seg-fill" style="width:4%;background:#7F77DD"></div></div><div class="seg-val">4%</div></div>
+          <div class="seg-row"><div class="seg-label">Lost</div><div class="seg-track"><div class="seg-fill" style="width:2%;background:#E24B4A"></div></div><div class="seg-val">2%</div></div>
+        </div>
+        <div style="margin-top:18px">
+          <div class="insight"><div class="i-title">Retention Opportunity</div><div class="i-body">Activating the "At Risk" segment alone could recover an estimated €140K in annual revenue</div></div>
+          <div class="insight"><div class="i-title">Acquisition vs Retention</div><div class="i-body">Acquiring a new customer costs 5× more than retaining an existing one — retention ROI is clear</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-title">Customer Acquisition vs Retention Cost per Customer — Quarterly</div>
+      <div class="card-sub">Retention spend stays flat while acquisition cost inflates — rebalancing the mix improves margin</div>
+      <div class="legend">
+        <span><span class="dot" style="background:#E24B4A"></span>Acquisition cost/customer</span>
+        <span><span class="dot" style="background:#97C459"></span>Retention cost/customer</span>
+      </div>
+      <div class="chart-wrap" style="height:180px"><canvas id="c-acq"></canvas></div>
+    </div>
+
+  </div>
+
+  <!-- ══ SAP SOLUTION ══ -->
+  <div class="panel" id="panel-sap">
+
+    <div class="sap-hero">
+      <div class="sap-hero-header">
+        <span class="sap-pill">SAP Solution Design</span>
+        <span class="sap-hero-title">How SAP S/4HANA + SAP Analytics Cloud solves RetailCo's three core problems</span>
+      </div>
+      <div class="sap-cols">
+        <div class="sap-col">
+          <div class="sc-label">Problem 1 · Inventory</div>
+          <div class="sc-text">SAP Integrated Business Planning (IBP) connects demand forecasting with live stock data in real time — eliminating the 15% dead stock and €83K in annual stockout losses.</div>
+        </div>
+        <div class="sap-col">
+          <div class="sc-label">Problem 2 · Sales Visibility</div>
+          <div class="sc-text">SAP Analytics Cloud consolidates regional sales performance in real time — replacing month-end reporting lag with same-day decision intelligence across all five regions.</div>
+        </div>
+        <div class="sap-col">
+          <div class="sc-label">Problem 3 · Customer Insight</div>
+          <div class="sc-text">SAP Customer Experience (CX) + CRM enables RFM-driven personalisation — proactively targeting the 28% churn risk before customers are lost.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="card">
+        <div class="card-title">Before vs After SAP — KPI Comparison</div>
+        <div class="card-sub">Projected improvement across four headline metrics post-implementation</div>
+        <div class="legend">
+          <span><span class="dot" style="background:#E24B4A"></span>Before SAP</span>
+          <span><span class="dot" style="background:#378ADD"></span>After SAP (projected)</span>
+        </div>
+        <div class="chart-wrap" style="height:240px"><canvas id="c-before-after"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">3-Year ROI Projection</div>
+        <div class="card-sub">Implementation cost vs cumulative business benefit — break-even at Month 18</div>
+        <div class="legend">
+          <span><span class="dot" style="background:#E24B4A"></span>Cumulative cost</span>
+          <span><span class="dot" style="background:#97C459"></span>Cumulative benefit</span>
+        </div>
+        <div class="chart-wrap" style="height:240px"><canvas id="c-roi"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-title">SAP Implementation Roadmap</div>
+      <div class="card-sub">Phased delivery — quick wins in Phase 1, full integration by Month 18</div>
+      <div class="roadmap" style="margin-top:1rem">
+        <div class="road-phase phase-1">
+          <div class="r-tag">Phase 1 · Month 0–4</div>
+          <div class="r-title">Foundation</div>
+          <div class="r-text">SAP Analytics Cloud deployment, data migration, key user training, live sales dashboard go-live. First insights available within 8 weeks.</div>
+        </div>
+        <div class="road-phase phase-2">
+          <div class="r-tag">Phase 2 · Month 4–10</div>
+          <div class="r-title">Integration</div>
+          <div class="r-text">SAP IBP for inventory forecasting, S/4HANA procurement integration, dead stock reduction programme. Target: cut dead stock from 15% to under 6%.</div>
+        </div>
+        <div class="road-phase phase-3">
+          <div class="r-tag">Phase 3 · Month 10–18</div>
+          <div class="r-title">Optimise</div>
+          <div class="r-text">SAP CX rollout, AI-driven customer segmentation, predictive reordering, full real-time reporting across all regions. Full ROI positive.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /main -->
+
+<div class="footer">
+  <strong>RetailCo Digital Transformation Dashboard</strong> &nbsp;·&nbsp; Project by Shariq Aziz &nbsp;·&nbsp; M.Sc. International Information Systems, FAU Erlangen-Nürnberg &nbsp;·&nbsp; SAP Experience Centers Application · Req. 447355
+</div>
+
+<script>
+const BLUE='#378ADD', GREEN='#97C459', AMBER='#EF9F27', RED='#E24B4A', PURPLE='#7F77DD', TEAL='#1D9E75', GRAY='#B4B2A9';
+const gridC='rgba(0,0,0,0.07)', tick='#888780';
+const inited={};
+
+function baseOpts(yFmt, yFmt2) {
+  return {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{grid:{color:gridC}, ticks:{color:tick,font:{size:11}}},
+      y:{grid:{color:gridC}, ticks:{color:tick,font:{size:11}, callback:yFmt||undefined}}
+    }
+  };
+}
+
+function showTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  setTimeout(()=>initCharts(name),30);
+}
+
+function initCharts(tab) {
+  if(inited[tab]) return;
+  inited[tab]=true;
+
+  if(tab==='overview'){
+    new Chart(document.getElementById('c-revenue'),{type:'line',data:{
+      labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      datasets:[
+        {label:'2024',data:[280,310,340,295,320,290,305,335,380,520,680,445],borderColor:BLUE,backgroundColor:'rgba(55,138,221,0.08)',fill:true,tension:0.4,pointRadius:3,pointHoverRadius:5},
+        {label:'2023',data:[250,275,300,265,290,260,275,300,345,470,610,400],borderColor:GREEN,backgroundColor:'transparent',borderDash:[4,3],tension:0.4,pointRadius:2}
+      ]
+    },options:{...baseOpts(v=>'€'+v+'K'),plugins:{legend:{display:false}}}});
+
+    new Chart(document.getElementById('c-category'),{type:'doughnut',data:{
+      labels:['Electronics','Apparel','Home & Garden','Food & Bev','Sports','Other'],
+      datasets:[{data:[32,36,14,9,6,3],backgroundColor:[BLUE,GREEN,AMBER,TEAL,PURPLE,GRAY],borderWidth:2,borderColor:'#fff',hoverOffset:6}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'62%'}});
+
+    new Chart(document.getElementById('c-regional'),{type:'bar',data:{
+      labels:['North','East','West','South','Central'],
+      datasets:[{data:[1.12,0.98,0.87,0.61,0.52],backgroundColor:[BLUE,BLUE,GREEN,RED,AMBER],borderRadius:5,borderSkipped:false}]
+    },options:{...baseOpts(v=>'€'+v+'M'),scales:{x:{grid:{color:'transparent'},ticks:{color:tick,font:{size:11}}},y:{grid:{color:gridC},ticks:{color:tick,font:{size:11},callback:v=>'€'+v+'M'}}}}});
+  }
+
+  if(tab==='inventory'){
+    new Chart(document.getElementById('c-turnover'),{type:'bar',data:{
+      labels:['Electronics','Apparel','Food & Bev','Sports','Home & Garden'],
+      datasets:[
+        {label:'Actual',data:[7.2,5.8,9.1,4.4,2.3],backgroundColor:BLUE,borderRadius:4},
+        {label:'Industry Avg',data:[6.1,6.1,6.1,6.1,6.1],backgroundColor:'rgba(151,196,89,0.5)',borderRadius:4}
+      ]
+    },options:{...baseOpts(v=>v+'x'),scales:{x:{grid:{color:'transparent'},ticks:{color:tick,font:{size:11}}},y:{grid:{color:gridC},ticks:{color:tick,font:{size:11},callback:v=>v+'x'}}}}});
+
+    new Chart(document.getElementById('c-stock'),{type:'doughnut',data:{
+      labels:['Active (healthy)','Slow moving','Dead stock (90d+)','Critical overstock'],
+      datasets:[{data:[62,16,15,7],backgroundColor:[GREEN,AMBER,RED,PURPLE],borderWidth:2,borderColor:'#fff',hoverOffset:6}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'58%'}});
+
+    new Chart(document.getElementById('c-gap'),{type:'bar',data:{
+      labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      datasets:[
+        {label:'Demand',data:[280,310,340,295,320,290,305,335,380,520,680,445],backgroundColor:'rgba(55,138,221,0.25)',borderRadius:3},
+        {label:'Supply',data:[295,300,325,310,300,285,310,310,350,480,620,490],backgroundColor:'rgba(151,196,89,0.4)',borderRadius:3},
+        {type:'line',label:'Gap',data:[-15,10,15,-15,20,5,-5,25,30,40,60,-45],borderColor:RED,backgroundColor:'transparent',pointRadius:4,pointBackgroundColor:RED,tension:0.3,yAxisID:'y2'}
+      ]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+      x:{grid:{color:'transparent'},ticks:{color:tick,font:{size:11}}},
+      y:{grid:{color:gridC},ticks:{color:tick,font:{size:11},callback:v=>'€'+v+'K'}},
+      y2:{position:'right',grid:{display:false},ticks:{color:RED,font:{size:10},callback:v=>v+'K'}}
+    }}});
+  }
+
+  if(tab==='customers'){
+    new Chart(document.getElementById('c-rfm'),{type:'doughnut',data:{
+      labels:['Champions','Loyal','At Risk','Occasional','Lost'],
+      datasets:[{data:[22,18,15,31,14],backgroundColor:[BLUE,GREEN,AMBER,PURPLE,RED],borderWidth:2,borderColor:'#fff',hoverOffset:6}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'55%'}});
+
+    new Chart(document.getElementById('c-acq'),{type:'bar',data:{
+      labels:['Q1','Q2','Q3','Q4'],
+      datasets:[
+        {label:'Acquisition',data:[145,138,152,161],backgroundColor:RED,borderRadius:4},
+        {label:'Retention',data:[29,27,31,33],backgroundColor:GREEN,borderRadius:4}
+      ]
+    },options:{...baseOpts(v=>'€'+v),scales:{x:{grid:{color:'transparent'},ticks:{color:tick,font:{size:11}}},y:{grid:{color:gridC},ticks:{color:tick,font:{size:11},callback:v=>'€'+v}}}}});
+  }
+
+  if(tab==='sap'){
+    new Chart(document.getElementById('c-before-after'),{type:'bar',data:{
+      labels:['Inventory Turnover','Gross Margin (%)','Customer NPS','Dead Stock (%)'],
+      datasets:[
+        {label:'Before SAP',data:[4.2,38.4,42,15],backgroundColor:RED,borderRadius:4},
+        {label:'After SAP',data:[6.8,44.1,68,4],backgroundColor:BLUE,borderRadius:4}
+      ]
+    },options:{...baseOpts(),indexAxis:'y',scales:{
+      x:{grid:{color:gridC},ticks:{color:tick,font:{size:11}}},
+      y:{grid:{color:'transparent'},ticks:{color:tick,font:{size:11}}}
+    }}});
+
+    new Chart(document.getElementById('c-roi'),{type:'line',data:{
+      labels:['Now','M6','M12','M18','M24','M30','M36'],
+      datasets:[
+        {label:'Cost',data:[0,180,320,380,410,430,450],borderColor:RED,backgroundColor:'rgba(226,75,74,0.07)',fill:true,tension:0.4,pointRadius:4},
+        {label:'Benefit',data:[0,40,160,380,620,860,1100],borderColor:GREEN,backgroundColor:'rgba(151,196,89,0.07)',fill:true,tension:0.4,pointRadius:4}
+      ]
+    },options:{...baseOpts(v=>'€'+v+'K'),scales:{
+      x:{grid:{color:gridC},ticks:{color:tick,font:{size:11}}},
+      y:{grid:{color:gridC},ticks:{color:tick,font:{size:11},callback:v=>'€'+v+'K'}}
+    }}});
+  }
+}
+
+initCharts('overview');
+</script>
+</body>
+</html>
